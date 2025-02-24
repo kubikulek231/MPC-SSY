@@ -22,7 +22,7 @@ void UART_SendChar(uint8_t data) {
 }
 
 uint8_t UART_GetChar(void) {
-	while (!(UCSR1A & (1 << RXC0)));  // Wait for data to be received
+	while (!(UCSR1A & (1 << RXC1)));  // Wait for data to be received
 	return UDR1;  // Return received data
 }
 
@@ -38,7 +38,9 @@ void UART_SendStringNewLine(char *text) {
         UART_SendChar(*text);
         text++;
     }
-    UART_SendChar('\n');  // New Line (LF)
+    UART_SendChar('\r');  // Carriage Return
+    UART_SendChar('\n');  // New Line
+    UART_SendChar(0x00);  // Explicitly send NULL character
 }
 
 

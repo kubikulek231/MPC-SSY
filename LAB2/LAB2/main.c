@@ -89,6 +89,25 @@ void capsLetters(int case_type) {
 	}
 }
 
+#include <stdio.h>
+
+// Custom toupper function
+char my_toupper(char c) {
+	if (c >= 'a' && c <= 'z') {
+		return c - 'a' + 'A';
+	}
+	return c;
+}
+
+// Custom tolower function
+char my_tolower(char c) {
+	if (c >= 'A' && c <= 'Z') {
+		return c - 'A' + 'a';
+	}
+	return c;
+}
+
+
 // Funkce pro v?pis abecedy v po?adovan?m sm?ru
 void printField(int direction) {
 	int i;
@@ -115,7 +134,7 @@ void board_init(){
 
 int main(void) {
     UART_init(38400);  // Initialize UART with 9600 baud
-	uint8_t test_sequence[] = { 'H', 'e', 'l', 'l', 'o', ' ', 'U', 'A', 'R', 'T', '\n', 0 };
+	uint8_t test_sequence[] = { 'H', 'e', 'l', 'l', 'o', ' ', 'U', 'A', 'R', 'T', '\r', '\n', 0 };
 
 	for (uint8_t i = 0; test_sequence[i] != 0; i++) {
 		UART_SendChar(test_sequence[i]);  // Send each character
@@ -123,6 +142,8 @@ int main(void) {
 	
 	UART_SendStringNewLine("Welcome to interactive terminal!");
     UART_SendStringNewLine("Choose a number for response:");
+	UART_SendStringNewLine("1 ...... function 1");
+	UART_SendStringNewLine("0 ...... exit");
 
     while (1) {
         uint8_t received = UART_GetChar();  // Wait for input
