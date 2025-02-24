@@ -136,11 +136,15 @@ void printMenu() {
 	UART_SendStringNewLine("Welcome to interactive terminal!");
 	UART_SendStringNewLine("1 ...... turn on led 1");
 	UART_SendStringNewLine("2 ...... turn off led 1");
-	UART_SendStringNewLine("0 ...... exit");
+	UART_SendStringNewLine("3 ...... turn on led 2");
+	UART_SendStringNewLine("4 ...... turn off led 2");
+	UART_SendStringNewLine("5 ...... turn on led 3");
+	UART_SendStringNewLine("6 ...... turn off led 3");
+	UART_SendStringNewLine("0 ...... clear");
 }
 
 void cleanConsole() {
-	for (int i = 0; i < 20; i++) {
+	for (int i = 0; i < 30; i++) {
         UART_SendStringNewLine("");  // Send an empty string which is just a newline
     }
 }
@@ -156,33 +160,46 @@ int main(void) {
 	DDRB |= (1 << DDB5) | (1 << DDB6);  // Set PORTB pins 5 and 6 as output
     DDRE |= (1 << DDE3);  // Set PORTE pin 3 as output
 	
-	while(1) {
-		printMenu();
-		while (1) {
-			uint8_t received = UART_GetChar();  // Wait for input
-			UART_SendStringNewLine("Your input is:");
-			UART_SendChar(received);
-			UART_SendChar('\r');
-			UART_SendChar('\n');
+	printMenu();
+	while (1) {
+		uint8_t received = UART_GetChar();  // Wait for input
+		UART_SendStringNewLine("Your input is:");
+		UART_SendChar(received);
+		UART_SendChar('\r');
+		UART_SendChar('\n');
 
-			switch (received) {
-                case '0':
-                    UART_SendStringNewLine("Exiting...");
-					cleanConsole();
-                    break;  // Exit the program or break the outer loop
-                case '1':
-                    UART_SendStringNewLine("Turning LED 1 on!");
-					LED1ON;
-					break;
-                case '2':
-                    UART_SendStringNewLine("Turning LED 1 off!");
-					LED1OFF;
-					break;
-                default:
-                    UART_SendStringNewLine("Invalid input, please choose again.");
-					break;
-            }
+		switch (received) {
+            case '0':
+				cleanConsole();
+				printMenu();
+                break;  // Exit the program or break the outer loop
+            case '1':
+                UART_SendStringNewLineColored("Turning LED 1 on!", GREEN_TEXT);
+				LED1ON;
+				break;
+            case '2':
+                UART_SendStringNewLine("Turning LED 1 off!");
+				LED1OFF;
+				break;
+	        case '3':
+                UART_SendStringNewLine("Turning LED 2 on!");
+				LED2ON;
+				break;
+            case '4':
+                UART_SendStringNewLine("Turning LED 2 off!");
+				LED2OFF;
+				break;
+			case '5':
+                UART_SendStringNewLine("Turning LED 3 on!");
+				LED3ON;
+				break;
+            case '6':
+                UART_SendStringNewLine("Turning LED 3 off!");
+				LED3OFF;
+				break;
+            default:
+                UART_SendStringNewLine("Invalid input, please choose again.");
+				break;
 		}
-		cleanConsole();
 	}
 }

@@ -43,6 +43,22 @@ void UART_SendStringNewLine(char *text) {
     UART_SendChar(0x00);  // Explicitly send NULL character
 }
 
+// Function to send a colored string with a newline
+void UART_SendStringNewLineColored(char *str, char *color_code) {
+    // Send the color code first
+    while (*color_code != 0x00) {
+        UART_SendChar(*color_code);  // Send color code character by character
+        color_code++;
+    }
+    
+    // Now send the string
+    UART_SendStringNewLine(str);  // Send the string with a newline
+    
+    // Reset the color to default
+    while (*RESET_COLOR != 0x00) {
+        UART_SendChar(*RESET_COLOR);  // Send reset color code character by character
+    }
+}
 
 int printCHAR(char character, FILE *stream) {
 	UART_SendChar(character);  // Send character via UART
