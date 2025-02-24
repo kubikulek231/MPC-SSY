@@ -132,6 +132,19 @@ void board_init(){
 	stdout = &uart_str; //presmerovani STDOUT
 }
 
+void printMenu() {
+	UART_SendStringNewLine("Welcome to interactive terminal!");
+	UART_SendStringNewLine("1 ...... turn on led 1");
+	UART_SendStringNewLine("2 ...... turn off led 1");
+	UART_SendStringNewLine("0 ...... exit");
+}
+
+void cleanConsole() {
+	for (int i = 0; i < 20; i++) {
+        UART_SendStringNewLine("");  // Send an empty string which is just a newline
+    }
+}
+
 int main(void) {
     UART_init(38400);  // Initialize UART with 9600 baud
 	uint8_t test_sequence[] = { 'H', 'e', 'l', 'l', 'o', ' ', 'U', 'A', 'R', 'T', '\r', '\n', 0 };
@@ -140,13 +153,36 @@ int main(void) {
 		UART_SendChar(test_sequence[i]);  // Send each character
 	}
 	
-	UART_SendStringNewLine("Welcome to interactive terminal!");
-    UART_SendStringNewLine("Choose a number for response:");
-	UART_SendStringNewLine("1 ...... function 1");
-	UART_SendStringNewLine("0 ...... exit");
+	DDRB |= (1 << DDB5) | (1 << DDB6);  // Set PORTB pins 5 and 6 as output
+    DDRE |= (1 << DDE3);  // Set PORTE pin 3 as output
+	
+	while(1) {
+		printMenu();
+		while (1) {
+			uint8_t received = UART_GetChar();  // Wait for input
+			UART_SendStringNewLine("Your input is:");
+			UART_SendChar(received);
+			UART_SendChar('\r');
+			UART_SendChar('\n');
 
-    while (1) {
-        uint8_t received = UART_GetChar();  // Wait for input
-        UART_SendChar(received);  // Echo back received character
-    }
+			switch (received) {
+                case '0':
+                    UART_SendStringNewLine("Exiting...");
+					cleanConsole();
+                    break;  // Exit the program or break the outer loop
+                case '1':
+                    UART_SendStringNewLine("Turning LED 1 on!");
+					LED1ON;
+					break;
+                case '2':
+                    UART_SendStringNewLine("Turning LED 1 off!");
+					LED1OFF;
+					break;
+                default:
+                    UART_SendStringNewLine("Invalid input, please choose again.");
+					break;
+            }
+		}
+		cleanConsole();
+	}
 }

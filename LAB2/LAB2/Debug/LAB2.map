@@ -344,7 +344,7 @@ END GROUP
 .rela.plt
  *(.rela.plt)
 
-.text           0x00000000      0x2c2
+.text           0x00000000      0x334
  *(.vectors)
  .vectors       0x00000000      0x134 C:/Apps/Atmel/Studio/7.0/Packs/Atmel/ATmega_DFP/2.2.509/gcc/dev/atmega256rfr2/avr6/crtatmega256rfr2.o
                 0x00000000                __vector_default
@@ -494,22 +494,28 @@ END GROUP
  .text.UART_SendStringNewLine
                 0x000001b4       0x24 libs/libprintfuart.o
                 0x000001b4                UART_SendStringNewLine
- .text.main     0x000001d8       0x6a main.o
-                0x000001d8                main
+ .text.printMenu
+                0x000001d8       0x1a main.o
+                0x000001d8                printMenu
+ .text.cleanConsole
+                0x000001f2       0x1e main.o
+                0x000001f2                cleanConsole
+ .text.main     0x00000210       0xa4 main.o
+                0x00000210                main
  .text.libgcc.div
-                0x00000242       0x28 c:/apps/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr6\libgcc.a(_divmodsi4.o)
-                0x00000242                __divmodsi4
+                0x000002b4       0x28 c:/apps/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr6\libgcc.a(_divmodsi4.o)
+                0x000002b4                __divmodsi4
  .text.libgcc.div
-                0x0000026a       0x10 c:/apps/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr6\libgcc.a(_negsi2.o)
-                0x0000026a                __negsi2
+                0x000002dc       0x10 c:/apps/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr6\libgcc.a(_negsi2.o)
+                0x000002dc                __negsi2
  .text.libgcc.div
-                0x0000027a       0x44 c:/apps/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr6\libgcc.a(_udivmodsi4.o)
-                0x0000027a                __udivmodsi4
-                0x000002be                . = ALIGN (0x2)
+                0x000002ec       0x44 c:/apps/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr6\libgcc.a(_udivmodsi4.o)
+                0x000002ec                __udivmodsi4
+                0x00000330                . = ALIGN (0x2)
  *(.fini9)
- .fini9         0x000002be        0x0 c:/apps/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr6\libgcc.a(_exit.o)
-                0x000002be                _exit
-                0x000002be                exit
+ .fini9         0x00000330        0x0 c:/apps/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr6\libgcc.a(_exit.o)
+                0x00000330                _exit
+                0x00000330                exit
  *(.fini9)
  *(.fini8)
  *(.fini8)
@@ -528,11 +534,11 @@ END GROUP
  *(.fini1)
  *(.fini1)
  *(.fini0)
- .fini0         0x000002be        0x4 c:/apps/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr6\libgcc.a(_exit.o)
+ .fini0         0x00000330        0x4 c:/apps/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr6\libgcc.a(_exit.o)
  *(.fini0)
-                0x000002c2                _etext = .
+                0x00000334                _etext = .
 
-.data           0x00800200       0x90 load address 0x000002c2
+.data           0x00800200       0xe0 load address 0x00000334
                 0x00800200                PROVIDE (__data_start, .)
  *(.data)
  *(.data*)
@@ -541,26 +547,27 @@ END GROUP
  .rodata        0x00800200        0xd main.o
  *(.rodata*)
  .rodata.str1.1
-                0x0080020d       0x83 main.o
+                0x0080020d       0xd3 main.o
+                                 0xd4 (size before relaxing)
  *(.gnu.linkonce.r*)
-                0x00800290                . = ALIGN (0x2)
-                0x00800290                _edata = .
-                0x00800290                PROVIDE (__data_end, .)
+                0x008002e0                . = ALIGN (0x2)
+                0x008002e0                _edata = .
+                0x008002e0                PROVIDE (__data_end, .)
 
-.bss            0x00800290        0x0
-                0x00800290                PROVIDE (__bss_start, .)
+.bss            0x008002e0        0x0
+                0x008002e0                PROVIDE (__bss_start, .)
  *(.bss)
  *(.bss*)
  *(COMMON)
-                0x00800290                PROVIDE (__bss_end, .)
-                0x000002c2                __data_load_start = LOADADDR (.data)
-                0x00000352                __data_load_end = (__data_load_start + SIZEOF (.data))
+                0x008002e0                PROVIDE (__bss_end, .)
+                0x00000334                __data_load_start = LOADADDR (.data)
+                0x00000414                __data_load_end = (__data_load_start + SIZEOF (.data))
 
-.noinit         0x00800290        0x0
+.noinit         0x008002e0        0x0
                 [!provide]                PROVIDE (__noinit_start, .)
  *(.noinit*)
                 [!provide]                PROVIDE (__noinit_end, .)
-                0x00800290                _end = .
+                0x008002e0                _end = .
                 [!provide]                PROVIDE (__heap_start, .)
 
 .eeprom         0x00810000        0x0
@@ -626,51 +633,51 @@ END GROUP
 .debug_sfnames
  *(.debug_sfnames)
 
-.debug_aranges  0x00000000       0x98
+.debug_aranges  0x00000000       0xa8
  *(.debug_aranges)
  .debug_aranges
                 0x00000000       0x48 libs/libprintfuart.o
  .debug_aranges
-                0x00000048       0x50 main.o
+                0x00000048       0x60 main.o
 
 .debug_pubnames
  *(.debug_pubnames)
 
-.debug_info     0x00000000     0x1bc9
+.debug_info     0x00000000     0x1cf5
  *(.debug_info .gnu.linkonce.wi.*)
  .debug_info    0x00000000     0x13e6 C:/Apps/Atmel/Studio/7.0/Packs/Atmel/ATmega_DFP/2.2.509/gcc/dev/atmega256rfr2/avr6/crtatmega256rfr2.o
  .debug_info    0x000013e6      0x2b9 libs/libprintfuart.o
- .debug_info    0x0000169f      0x52a main.o
+ .debug_info    0x0000169f      0x656 main.o
 
-.debug_abbrev   0x00000000     0x1698
+.debug_abbrev   0x00000000     0x16aa
  *(.debug_abbrev)
  .debug_abbrev  0x00000000     0x12d6 C:/Apps/Atmel/Studio/7.0/Packs/Atmel/ATmega_DFP/2.2.509/gcc/dev/atmega256rfr2/avr6/crtatmega256rfr2.o
  .debug_abbrev  0x000012d6      0x179 libs/libprintfuart.o
- .debug_abbrev  0x0000144f      0x249 main.o
+ .debug_abbrev  0x0000144f      0x25b main.o
 
-.debug_line     0x00000000      0x6b5
+.debug_line     0x00000000      0x767
  *(.debug_line .debug_line.* .debug_line_end)
  .debug_line    0x00000000      0x272 C:/Apps/Atmel/Studio/7.0/Packs/Atmel/ATmega_DFP/2.2.509/gcc/dev/atmega256rfr2/avr6/crtatmega256rfr2.o
  .debug_line    0x00000272      0x18b libs/libprintfuart.o
- .debug_line    0x000003fd      0x2b8 main.o
+ .debug_line    0x000003fd      0x36a main.o
 
-.debug_frame    0x00000000      0x15c
+.debug_frame    0x00000000      0x188
  *(.debug_frame)
  .debug_frame   0x00000000       0x8c libs/libprintfuart.o
- .debug_frame   0x0000008c       0xd0 main.o
+ .debug_frame   0x0000008c       0xfc main.o
 
-.debug_str      0x00000000      0xa90
+.debug_str      0x00000000      0xaa7
  *(.debug_str)
  .debug_str     0x00000000      0x7f7 C:/Apps/Atmel/Studio/7.0/Packs/Atmel/ATmega_DFP/2.2.509/gcc/dev/atmega256rfr2/avr6/crtatmega256rfr2.o
  .debug_str     0x000007f7      0x1ce libs/libprintfuart.o
                                 0x20c (size before relaxing)
- .debug_str     0x000009c5       0xcb main.o
-                                0x288 (size before relaxing)
+ .debug_str     0x000009c5       0xe2 main.o
+                                0x29f (size before relaxing)
 
-.debug_loc      0x00000000      0x582
+.debug_loc      0x00000000      0x5c2
  *(.debug_loc)
  .debug_loc     0x00000000      0x11b libs/libprintfuart.o
- .debug_loc     0x0000011b      0x467 main.o
+ .debug_loc     0x0000011b      0x4a7 main.o
 
 .debug_macinfo
  *(.debug_macinfo)
@@ -690,10 +697,10 @@ END GROUP
 .debug_pubtypes
  *(.debug_pubtypes)
 
-.debug_ranges   0x00000000       0x78
+.debug_ranges   0x00000000       0x88
  *(.debug_ranges)
  .debug_ranges  0x00000000       0x38 libs/libprintfuart.o
- .debug_ranges  0x00000038       0x40 main.o
+ .debug_ranges  0x00000038       0x50 main.o
 
 .debug_macro
  *(.debug_macro)
