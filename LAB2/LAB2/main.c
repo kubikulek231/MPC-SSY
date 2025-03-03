@@ -11,8 +11,10 @@
 #include "libs/macros.h"
 #include <avr/io.h>
 #include <util/delay.h>
+#include <avr/interrupt.h>
 #include "libs/libprintfuart.h"
 #include <stdio.h>
+#include <stdbool.h>
 
 /************************************************************************/
 /* DEFINES                                                              */
@@ -35,6 +37,7 @@
 int vysledek = 10;
 unsigned char uch1 = 255;
 unsigned char uch2 = 255;
+bool btn_pressed = false;
 
 //musime vytvorit soubor pro STDOUT
 FILE uart_str = FDEV_SETUP_STREAM(printCHAR, NULL, _FDEV_SETUP_RW);
@@ -48,6 +51,11 @@ void board_init();
 /************************************************************************/
 /* FUNCTIONS                                                            */
 /************************************************************************/
+
+ISR(INT5_vect)
+{
+	btn_pressed = true;  // Set flag when button is pressed (interrupt occurs)
+}
 
 // Globalni pole
 char abeceda[26];
@@ -88,8 +96,6 @@ void capsLetters(int case_type) {
 		return;
 	}
 }
-
-#include <stdio.h>
 
 // Custom toupper function
 char my_toupper(char c) {
@@ -140,6 +146,7 @@ void printMenu() {
 	UART_SendStringNewLine("4 ...... turn off led 2");
 	UART_SendStringNewLine("5 ...... turn on led 3");
 	UART_SendStringNewLine("6 ...... turn off led 3");
+	UART_SendStringNewLine("7 ...... enter button input mode");
 	UART_SendStringNewLine("0 ...... clear");
 }
 
@@ -149,8 +156,29 @@ void cleanConsole() {
     }
 }
 
+void send_counter(int counter)
+{
+	char buf[10]; // Buffer to hold the counter value as a string
+	itoa(counter, buf, 10);  // Convert counter to string in base 10
+	UART_SendString("Button pressed count: ");
+	UART_SendString(buf);  // Send the string (counter value) over UART
+	UART_SendString("\r\n");
+}
+
 int main(void) {
     UART_init(38400);  // Initialize UART with 9600 baud
+	
+	// Set PB6 as output for LED control
+	sbi(DDRB, PORTB6);
+		
+	cbi(DDRE, PORTE5); // Set PE5 as input
+	
+	sbi(EICRB, ISC51); // Falling edge
+	cbi(EICRB, ISC50);
+	sbi(EIMSK, INT5); // Enable INT5
+	
+	sei(); // Enable global interrupts
+		
 	uint8_t test_sequence[] = { 'H', 'e', 'l', 'l', 'o', ' ', 'U', 'A', 'R', 'T', '\r', '\n', 0 };
 
 	for (uint8_t i = 0; test_sequence[i] != 0; i++) {
@@ -196,6 +224,18 @@ int main(void) {
             case '6':
                 UART_SendStringNewLine("Turning LED 3 off!");
 				LED3OFF;
+				break;
+			case '7':
+				UART_SendStringNewLine("Entered button input mode:");
+				uint8_t counter = 0;
+				while(1) {
+					if (btn_pressed == true)
+					{
+						send_counter(counter);
+						counter++;
+						btn_pressed = false;
+					}
+				}
 				break;
             default:
                 UART_SendStringNewLine("Invalid input, please choose again.");
