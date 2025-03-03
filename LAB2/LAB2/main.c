@@ -52,6 +52,70 @@ void board_init();
 /* FUNCTIONS                                                            */
 /************************************************************************/
 
+#define PRESCALE_VALUE 1024
+#define PRESCALE 5
+#define FREQ 2
+
+void Timer1_cmp_start(uint16_t porovnani) {
+	cli();
+	TCCR1A = 0 ;
+	TCCR1B = 0 ;
+	TIMSK1 = 0 ;
+	
+	OCR1A = porovnani ;
+	// CTC mod :
+	TCCR1B |= ( 1 << WGM12) ;
+	// 1024 pred delicka:
+	//TCCR1B |= ( 1 << CS10 );
+	//TCCR1B |= ( 1 << CS12 );
+	TCCR1B |= 5;
+	// p o v o l i t p r e r u s e ni , pokud budete POTREBOVAT:
+	TIMSK1 |= ( 1 << OCIE1A);
+	// vystup na pin OC1A, t o g g l e
+	TCCR1A |= ( 1 << COM1A0);
+	sei();
+}
+
+void Timer2_fastpwm_start (uint8_t strida) {
+	cli () ;
+	TCCR2A = 0 ; // v y c i s t i t k o n t r o l n i r e g i s t r y
+	TCCR2B = 0 ;
+	TIMSK2 = 0 ; //
+	// n a s t a v i t hodnotu pro PWM
+	OCR2A = (255 * strida) / 100;
+	// fastpwm mod:
+	TCCR2A |= ( 1 << WGM21) ;
+	TCCR2A |= ( 1 << WGM20) ;
+	// 1024 p r e d d eli c k a :
+	TCCR2B |= 5 ;
+	TIMSK2 |= ( 1 << TOIE2 ) ;
+	TCCR2A |= ( 1 << COM2A1) ;
+	sei(); // p o v o l i t g l o b a l n i p r e r u s e n i
+}
+
+// NEZAPOMENTE PAK V PROGRAMU OSETRIT PRERUSENI
+ISR (TIMER1_COMPA_vect)
+{
+	LED1CHANGE;
+}void Timer0_ovf_start ( ) {
+	cli();
+	TCCR0A = 0;
+	TCCR0B = 0;
+	TIMSK0 = 0; 
+	// Nastav_timer ( mil s ) ;
+	// nastavit pocatecni hodnotu
+	// 1024 pred delicka:
+	TCCR0B |= PRESCALE;
+	// vystup na pin OC0A, t o g g l e
+	TCCR0A |= ( 1 << COM0A0) ;
+	TIMSK0 |= ( 1 << TOIE0 ) ;
+	sei();
+}
+void Timer1Stop ( ) {
+	TCCR1B=0;
+}void Timer2Stop ( ) {
+	TCCR2B=0;
+}
 ISR(INT5_vect)
 {
 	btn_pressed = true;  // Set flag when button is pressed (interrupt occurs)
@@ -82,7 +146,6 @@ void generateField(int case_type) {
 // funkce pro zmenu velikosti pismen
 void capsLetters(int case_type) {
 	int i;
-
 	if (case_type == UPPER_CASE) {
 		for (i = 0; i < 26; i++) {
 			abeceda[i] = toupper(abeceda[i]); // zmen na velka
@@ -147,6 +210,10 @@ void printMenu() {
 	UART_SendStringNewLine("5 ...... turn on led 3");
 	UART_SendStringNewLine("6 ...... turn off led 3");
 	UART_SendStringNewLine("7 ...... enter button input mode");
+	UART_SendStringNewLine("8 ...... turn on led blinking");
+	UART_SendStringNewLine("9 ...... turn off led blinking");
+	UART_SendStringNewLine("a ...... turn on PWM blinking");
+	UART_SendStringNewLine("b ...... turn OFF PWM blinking");
 	UART_SendStringNewLine("0 ...... clear");
 }
 
@@ -177,6 +244,7 @@ int main(void) {
 	cbi(EICRB, ISC50);
 	sbi(EIMSK, INT5); // Enable INT5
 	
+	
 	sei(); // Enable global interrupts
 		
 	uint8_t test_sequence[] = { 'H', 'e', 'l', 'l', 'o', ' ', 'U', 'A', 'R', 'T', '\r', '\n', 0 };
@@ -190,7 +258,7 @@ int main(void) {
 	
 	printMenu();
 	while (1) {
-		uint8_t received = UART_GetChar();  // Wait for input
+		char received = UART_GetChar();  // Wait for input
 		UART_SendStringNewLine("Your input is:");
 		UART_SendChar(received);
 		UART_SendChar('\r');
@@ -236,6 +304,24 @@ int main(void) {
 						btn_pressed = false;
 					}
 				}
+				break;
+			case '8':
+				UART_SendStringNewLine("Turned on led blinking!");
+				uint16_t porovnani = (F_CPU / (2 * PRESCALE_VALUE * FREQ)) - 1;
+				Timer1_cmp_start(porovnani);
+				break;
+			case '9':
+				UART_SendStringNewLine("Turned off led blinking!");
+				Timer1Stop();
+				break;
+			case 'a':
+				UART_SendStringNewLine("Turned on PWM led blinking!");
+				//uint16_t porovnani = (F_CPU / (2 * PRESCALE_VALUE * FREQ)) - 1;
+				//Timer1_cmp_start(porovnani);
+				break;
+			case 'b':
+				UART_SendStringNewLine("Turned off PWM led blinking!");
+				Timer2_fastpwm_start(50);
 				break;
             default:
                 UART_SendStringNewLine("Invalid input, please choose again.");
