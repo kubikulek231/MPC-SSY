@@ -82,12 +82,12 @@ void Timer2_fastpwm_start (uint8_t strida) {
 	TCCR2B = 0 ;
 	TIMSK2 = 0 ; //
 	// n a s t a v i t hodnotu pro PWM
-	OCR2A = (255 * strida) / 100;
+	OCR2A = (255 * 1) / 100;
 	// fastpwm mod:
 	TCCR2A |= ( 1 << WGM21) ;
 	TCCR2A |= ( 1 << WGM20) ;
 	// 1024 p r e d d eli c k a :
-	TCCR2B |= 5 ;
+	TCCR2B |= 5;
 	TIMSK2 |= ( 1 << TOIE2 ) ;
 	TCCR2A |= ( 1 << COM2A1) ;
 	sei(); // p o v o l i t g l o b a l n i p r e r u s e n i
@@ -96,21 +96,8 @@ void Timer2_fastpwm_start (uint8_t strida) {
 // NEZAPOMENTE PAK V PROGRAMU OSETRIT PRERUSENI
 ISR (TIMER1_COMPA_vect)
 {
-	LED1CHANGE;
-}void Timer0_ovf_start ( ) {
-	cli();
-	TCCR0A = 0;
-	TCCR0B = 0;
-	TIMSK0 = 0; 
-	// Nastav_timer ( mil s ) ;
-	// nastavit pocatecni hodnotu
-	// 1024 pred delicka:
-	TCCR0B |= PRESCALE;
-	// vystup na pin OC0A, t o g g l e
-	TCCR0A |= ( 1 << COM0A0) ;
-	TIMSK0 |= ( 1 << TOIE0 ) ;
-	sei();
-}
+	LED2CHANGE;
+}
 void Timer1Stop ( ) {
 	TCCR1B=0;
 }void Timer2Stop ( ) {
@@ -235,15 +222,12 @@ void send_counter(int counter)
 int main(void) {
     UART_init(38400);  // Initialize UART with 9600 baud
 	
-	// Set PB6 as output for LED control
-	sbi(DDRB, PORTB6);
 		
 	cbi(DDRE, PORTE5); // Set PE5 as input
 	
 	sbi(EICRB, ISC51); // Falling edge
 	cbi(EICRB, ISC50);
 	sbi(EIMSK, INT5); // Enable INT5
-	
 	
 	sei(); // Enable global interrupts
 		
@@ -253,7 +237,9 @@ int main(void) {
 		UART_SendChar(test_sequence[i]);  // Send each character
 	}
 	
-	DDRB |= (1 << DDB5) | (1 << DDB6);  // Set PORTB pins 5 and 6 as output
+    // Set PB6 as output for LED control
+	//sbi(DDRB, PORTB6);
+	DDRB |= (1 << DDB6) | (1 << DDB5) | (1 << DDB6);  // Set PORTB pins 5 and 6 as output
     DDRE |= (1 << DDE3);  // Set PORTE pin 3 as output
 	
 	printMenu();
@@ -322,7 +308,7 @@ int main(void) {
 			case 'b':
 				UART_SendStringNewLine("Turned off PWM led blinking!");
 				Timer2_fastpwm_start(50);
-				break;
+				//break;
             default:
                 UART_SendStringNewLine("Invalid input, please choose again.");
 				break;
