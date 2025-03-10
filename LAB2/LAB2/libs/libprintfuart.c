@@ -8,6 +8,9 @@
 #include "libprintfuart.h"
 #include <avr/io.h>
 #include <stdio.h>
+#include <util/delay.h>
+
+#define TIMEOUT_MS 50  // Timeout duration in milliseconds
 
 void UART_init(uint16_t Baudrate) {
 	uint16_t ubrr = (F_CPU / 16 / Baudrate) - 1;  // Calculate UBRR value
@@ -24,6 +27,17 @@ void UART_SendChar(uint8_t data) {
 uint8_t UART_GetChar(void) {
 	while (!(UCSR1A & (1 << RXC1)));  // Wait for data to be received
 	return UDR1;  // Return received data
+}
+
+uint8_t UART_GetCharNoWait(void) {
+    uint16_t timeout = TIMEOUT_MS;  // Timeout duration in ms
+    while (!(UCSR1A & (1 << RXC1))) {
+        if (timeout-- == 0) {
+            return 0;  // Return 0 if no data is received within the timeout
+        }
+        _delay_ms(1);  // Wait for 1ms (using _delay_ms from util/delay.h)
+    }
+    return UDR1;  // Return received data
 }
 
 void UART_SendString(char *text) {
@@ -43,21 +57,15 @@ void UART_SendStringNewLine(char *text) {
     UART_SendChar(0x00);  // Explicitly send NULL character
 }
 
-// Function to send a colored string with a newline
 void UART_SendStringNewLineColored(char *str, char *color_code) {
-    // Send the color code first
-    while (*color_code != 0x00) {
-        UART_SendChar(*color_code);  // Send color code character by character
-        color_code++;
-    }
-    
-    // Now send the string
-    UART_SendStringNewLine(str);  // Send the string with a newline
-    
-    // Reset the color to default
-    while (*RESET_COLOR != 0x00) {
-        UART_SendChar(*RESET_COLOR);  // Send reset color code character by character
-    }
+    // Send the color escape sequence
+    UART_SendString(color_code);  
+    // Send the actual string
+    UART_SendString(str);
+    // Send newline
+    UART_SendString("\r\n");
+    // Reset color
+    UART_SendString(RESET_COLOR);
 }
 
 int printCHAR(char character, FILE *stream) {

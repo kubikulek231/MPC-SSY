@@ -17,6 +17,7 @@
 void UART_init(uint16_t Baudrate);
 void UART_SendChar(uint8_t data);
 uint8_t UART_GetChar( void );
+uint8_t UART_GetCharNoWait(void);
 void UART_SendString(char *text);
 void UART_SendStringNewLine(char *text);
 void UART_SendStringNewLineColored(char *str, char *color_code);

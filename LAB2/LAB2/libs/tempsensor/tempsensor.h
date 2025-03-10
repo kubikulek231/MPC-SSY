@@ -6,8 +6,14 @@
  */ 
 
 
-#ifndef AT30TSE758_H_
-#define AT30TSE758_H_
+#ifndef TEMPSENSOR_H_
+#define TEMPSENSOR_H_
+
+#include <avr/io.h>
+#include <util/delay.h>
+#include "../libprintfuart.h"
+#include <stdio.h>
+
 //opsano z datasheetu
 #define TempSensorAddrR 0b10010111		//adresy vcetne R/W bitu, pro jednoduchost...
 #define TempSensorAddrW 0b10010110
@@ -36,9 +42,9 @@
 #define NVRBSY 0
 
 
-uint8_t at30_setPrecision(uint8_t prec);
-float at30_readTemp(void);
-uint8_t at30_readPrecision(void);
+uint8_t setPrecision(uint8_t prec);
+float readTemp(void);
+//uint8_t readPrecision(void);
 
 uint8_t EEPROMwriteByte(uint8_t eeprom, uint8_t address, uint8_t data);
 uint8_t EEPROMreadByte(uint8_t eeprom, uint8_t address);

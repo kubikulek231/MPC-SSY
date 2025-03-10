@@ -15,6 +15,9 @@
 #include "libs/libprintfuart.h"
 #include <stdio.h>
 #include <stdbool.h>
+#include "libs/i2clib/i2clib.h"
+#include "libs/adclib/adclib.h"
+#include "libs/tempsensor/tempsensor.h"
 
 /************************************************************************/
 /* DEFINES                                                              */
@@ -37,7 +40,9 @@
 int vysledek = 10;
 unsigned char uch1 = 255;
 unsigned char uch2 = 255;
-bool btn_pressed = false;
+bool btn1_pressed = false;
+bool btn2_pressed = false;
+bool temperature_ready = false;
 
 //musime vytvorit soubor pro STDOUT
 FILE uart_str = FDEV_SETUP_STREAM(printCHAR, NULL, _FDEV_SETUP_RW);
@@ -76,6 +81,30 @@ void Timer1_cmp_start(uint16_t porovnani) {
 	sei();
 }
 
+void Timer3_Temp_cmp_start(uint16_t porovnani) {
+    cli();  // Disable global interrupts
+    
+    // Reset Timer3 configuration
+    TCCR3A = 0;  // Set Timer3 to normal mode
+    TCCR3B = 0;  // Reset Timer3 control register B
+    TIMSK3 = 0;  // Disable interrupts for Timer3
+    
+    OCR3A = porovnani;  // Set the comparison value for Timer3
+    TCCR3B |= (1 << WGM32);  // Set Timer3 to CTC mode (Clear Timer on Compare Match)
+    TCCR3B |= 5;  // Set prescaler to 1024
+    
+    TIMSK3 |= (1 << OCIE3A);  // Enable interrupt for Timer3 compare match A
+    
+    sei();  // Enable global interrupts
+}
+
+
+ISR(TIMER3_COMPA_vect) {
+    // Set a flag to indicate the timer has triggered
+    temperature_ready = true;
+}
+
+
 void Timer2_fastpwm_start (uint8_t strida) {
 	cli () ;
 	TCCR2A = 0 ; // v y c i s t i t k o n t r o l n i r e g i s t r y
@@ -102,16 +131,23 @@ void Timer1Stop ( ) {
 	TCCR1B=0;
 }void Timer2Stop ( ) {
 	TCCR2B=0;
-}
+}void TempStop ( ) {
+	TCCR3B=0;
+}
 ISR(INT5_vect)
 {
-	btn_pressed = true;  // Set flag when button is pressed (interrupt occurs)
+	btn1_pressed = true;  // Set flag when button is pressed (interrupt occurs)
+}
+
+ISR(INT6_vect)
+{
+	btn2_pressed = true;  // Set flag when button is pressed (interrupt occurs)
 }
 
 // Globalni pole
 char abeceda[26];
 
-// funkce pro generaci abecedy
+// funkce pro generaci abecedym
 void generateField(int case_type) {
 	int i;
 
@@ -201,6 +237,7 @@ void printMenu() {
 	UART_SendStringNewLine("9 ...... turn off led blinking");
 	UART_SendStringNewLine("a ...... turn on PWM blinking");
 	UART_SendStringNewLine("b ...... turn OFF PWM blinking");
+	UART_SendStringNewLine("t ...... read temperature");
 	UART_SendStringNewLine("0 ...... clear");
 }
 
@@ -220,16 +257,40 @@ void send_counter(int counter)
 }
 
 int main(void) {
+	uint16_t adc_value;
+
+    // Initialize ADC with prescaler value and reference voltage (e.g., 64 and AVCC)
+    ADC_Init(2, 1);  // prescaler 64, reference voltage AVCC
+
+    // Get ADC value from channel 0 (e.g., analog pin A0)
+    adc_value = ADC_get(3);
+
+    // Print the result (you can use UART for output)
+    printf("ADC Value: %u\n", adc_value);
+
+    // Stop the ADC
+    ADC_stop();
+	
     UART_init(38400);  // Initialize UART with 9600 baud
-	
-		
-	cbi(DDRE, PORTE5); // Set PE5 as input
-	
-	sbi(EICRB, ISC51); // Falling edge
-	cbi(EICRB, ISC50);
-	sbi(EIMSK, INT5); // Enable INT5
-	
-	sei(); // Enable global interrupts
+	i2cInit();
+
+    // Configure PE5 & PE6 as INPUT
+    cbi(DDRE, PORTE5); // Button 1 (PE5)
+    cbi(DDRE, PORTE6); // Button 2 (PE6)
+
+    // Enable internal pull-ups (if no external resistors)
+    sbi(PORTE, PORTE5);
+    sbi(PORTE, PORTE6);
+
+    // Configure external interrupts
+    sbi(EICRB, ISC51); cbi(EICRB, ISC50); // INT5 -> Falling edge
+    sbi(EICRB, ISC61); cbi(EICRB, ISC60); // INT6 -> Falling edge
+
+    // Enable external interrupts
+    sbi(EIMSK, INT5);  
+    sbi(EIMSK, INT6);  
+
+    sei(); // Enable global interrupts
 		
 	uint8_t test_sequence[] = { 'H', 'e', 'l', 'l', 'o', ' ', 'U', 'A', 'R', 'T', '\r', '\n', 0 };
 
@@ -260,36 +321,46 @@ int main(void) {
 				LED1ON;
 				break;
             case '2':
-                UART_SendStringNewLine("Turning LED 1 off!");
+                UART_SendStringNewLineColored("Turning LED 1 off!", RED_TEXT);
 				LED1OFF;
 				break;
 	        case '3':
-                UART_SendStringNewLine("Turning LED 2 on!");
+                UART_SendStringNewLineColored("Turning LED 2 on!", GREEN_TEXT);
 				LED2ON;
 				break;
             case '4':
-                UART_SendStringNewLine("Turning LED 2 off!");
+                UART_SendStringNewLineColored("Turning LED 2 off!", RED_TEXT);
 				LED2OFF;
 				break;
 			case '5':
-                UART_SendStringNewLine("Turning LED 3 on!");
+                UART_SendStringNewLineColored("Turning LED 3 on!", GREEN_TEXT);
 				LED3ON;
 				break;
             case '6':
-                UART_SendStringNewLine("Turning LED 3 off!");
+                UART_SendStringNewLineColored("Turning LED 3 off!", RED_TEXT);
 				LED3OFF;
 				break;
 			case '7':
 				UART_SendStringNewLine("Entered button input mode:");
 				uint8_t counter = 0;
 				while(1) {
-					if (btn_pressed == true)
+					if (btn1_pressed == true)
 					{
 						send_counter(counter);
 						counter++;
-						btn_pressed = false;
+						btn1_pressed = false;
+					}
+					if (btn2_pressed == true)
+					{
+						btn2_pressed = false;
+						break;
+					}
+					if (counter >= 20) {
+						UART_SendStringNewLineColored("Reached max counter num!", GREEN_TEXT);
+						break;
 					}
 				}
+				UART_SendStringNewLineColored("Exiting button input mode!", RED_TEXT);
 				break;
 			case '8':
 				UART_SendStringNewLine("Turned on led blinking!");
@@ -307,8 +378,35 @@ int main(void) {
 				break;
 			case 'b':
 				UART_SendStringNewLine("Turned off PWM led blinking!");
-				Timer2_fastpwm_start(50);
+				//Timer2_fastpwm_start(50);
 				//break;
+			case 't':
+				UART_SendStringNewLine("Enabled temp mode:");
+				uint16_t porovnani1 = (F_CPU / (1 * PRESCALE_VALUE * FREQ)) - 1;
+				Timer3_Temp_cmp_start(porovnani1);
+				while (1) {
+					char received_temp = UART_GetCharNoWait();
+						if (received_temp == 'c') {
+							UART_SendStringNewLine("Exiting temperature reading mode...");
+							break;  // Exit the temperature reading mode
+						}
+					if (temperature_ready) {
+						temperature_ready = false;  // Reset the flag
+            
+						float temperature = readTemp();
+            
+						if (temperature != -1) {
+							// If the temperature was read successfully, convert to an integer (multiply by 100)
+							int temperatureInt = (int)(temperature * 100);
+							char temp_str[20];
+							sprintf(temp_str, "Temp: %d.%02d C", temperatureInt / 100, temperatureInt % 100);
+							UART_SendStringNewLine(temp_str);
+						} else {
+							// Handle error if temperature reading failed
+							UART_SendStringNewLine("Error reading temperature.");
+						}
+					}
+				}
             default:
                 UART_SendStringNewLine("Invalid input, please choose again.");
 				break;
