@@ -1,7 +1,10 @@
 #include "adclib.h"
+#include "../macros.h"
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
+#include <stdbool.h>
+#include <stdio.h>
 
 // Function to initialize the ADC
 void ADC_Init(uint8_t prescale, uint8_t uref) {
@@ -15,9 +18,9 @@ void ADC_Init(uint8_t prescale, uint8_t uref) {
     // Set the reference voltage for ADC (REFS0 and REFS1 bits in ADMUX)
     ADMUX |= (uref << REFS0);
 
-	sbi (ADCSRA, ADEN) ;
-	while (!(ADCSRB & 0x80)) ;
-	while (!(ADCSRB & 0x20)) ;}
+	sbi (ADCSRA, ADEN);
+	while (!(ADCSRB & 0x80));
+	while (!(ADCSRB & 0x20));}
 
 // Function to get ADC value from a specific channel (polling method)
 uint16_t ADC_get(uint8_t chan) {

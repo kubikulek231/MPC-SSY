@@ -238,6 +238,7 @@ void printMenu() {
 	UART_SendStringNewLine("a ...... turn on PWM blinking");
 	UART_SendStringNewLine("b ...... turn OFF PWM blinking");
 	UART_SendStringNewLine("t ...... read temperature");
+	UART_SendStringNewLine("d ...... read ADC values");
 	UART_SendStringNewLine("0 ...... clear");
 }
 
@@ -407,6 +408,15 @@ int main(void) {
 						}
 					}
 				}
+			case 'd':
+				UART_SendStringNewLine("Reading ADC value:");
+                ADC_Init(4, 2);
+				uint16_t adc_value = ADC_get(3);
+				char temp_str[20];
+				sprintf(temp_str, "Value: %d", adc_value);
+				UART_SendStringNewLine(temp_str);
+				ADC_stop();
+				break;
             default:
                 UART_SendStringNewLine("Invalid input, please choose again.");
 				break;
