@@ -32,7 +32,4 @@
 #define LED3OFF sbi(PORTE,3)
 #define LED3CHANGE xbi(PORTE,3)
 
-
-
-
 #endif /* MAKRA_H_ */

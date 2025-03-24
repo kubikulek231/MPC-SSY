@@ -61,6 +61,55 @@ void board_init();
 #define PRESCALE 5
 #define FREQ 2
 
+/************************************************************************/
+/* WEIGHT SENSOR DEFINES								                */
+/************************************************************************/
+
+#define ADSK_PIN    PINF   // PF3 as clock (ADSK)
+#define ADSK_DDR    DDRF
+#define ADSK_PORT   PORTF
+#define ADSK_BIT    PF3    // Clock signal on PF3
+
+#define ADDO_PIN    PING   // PG5 as data (ADDO)
+#define ADDO_DDR    DDRG
+#define ADDO_PORT   PORTG
+#define ADDO_BIT    PG5    // Data signal on PG5
+
+
+void Hx711_init(void) {
+	ADDO_DDR &= ~(1 << ADDO_BIT);  // Set ADDO as input
+	ADDO_PORT |= (1 << ADDO_BIT);  // Enable pull-up (if needed)
+	
+	ADSK_DDR |= (1 << ADSK_BIT);   // Set ADSK as output
+	ADSK_PORT &= ~(1 << ADSK_BIT); // Start ADSK low
+}
+
+unsigned long Hx711_read(void) {
+	unsigned long Count = 0;
+	uint8_t i;
+
+	// Wait until ADDO goes low (indicates data ready)
+	while (ADDO_PIN & (1 << ADDO_BIT));
+
+	// Read 24-bit data
+	for (i = 0; i < 24; i++) {
+		ADSK_PORT |= (1 << ADSK_BIT);  // Set ADSK high
+		Count = Count << 1;
+		ADSK_PORT &= ~(1 << ADSK_BIT); // Set ADSK low
+
+		if (ADDO_PIN & (1 << ADDO_BIT)) {
+			Count++;
+		}
+	}
+
+	// Send extra clock pulse to set device mode
+	ADSK_PORT |= (1 << ADSK_BIT);
+	Count ^= 0x800000; // Convert signed 24-bit value
+	ADSK_PORT &= ~(1 << ADSK_BIT);
+
+	return Count;
+}
+
 void Timer1_cmp_start(uint16_t porovnani) {
 	cli();
 	TCCR1A = 0 ;
@@ -416,6 +465,20 @@ int main(void) {
 				sprintf(temp_str, "Value: %d", adc_value);
 				UART_SendStringNewLine(temp_str);
 				ADC_stop();
+				break;
+			case 'e':
+				Hx711_init();
+				UART_SendStringNewLine("Init done.");
+				unsigned long value = 0;
+				UART_SendStringNewLine("Reading weight ADC value:");
+				while (1) {
+					value = Hx711_read();
+					_delay_ms(500);
+					char temp_str[20];
+					sprintf(temp_str, "Value: %lu", value);  // Use %lu for unsigned long
+    
+					UART_SendStringNewLine(temp_str);
+				}
 				break;
             default:
                 UART_SendStringNewLine("Invalid input, please choose again.");
