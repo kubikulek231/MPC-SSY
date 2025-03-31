@@ -288,6 +288,9 @@ void printMenu() {
 	UART_SendStringNewLine("b ...... turn OFF PWM blinking");
 	UART_SendStringNewLine("t ...... read temperature");
 	UART_SendStringNewLine("d ...... read ADC values");
+	UART_SendStringNewLine("e ...... read weight ADC values");
+	UART_SendStringNewLine("f ...... calibrate weight reading");
+	UART_SendStringNewLine("g ...... read calibrated values");
 	UART_SendStringNewLine("0 ...... clear");
 }
 
@@ -304,6 +307,10 @@ void send_counter(int counter)
 	UART_SendString("Button pressed count: ");
 	UART_SendString(buf);  // Send the string (counter value) over UART
 	UART_SendString("\r\n");
+}
+
+float get_weight_in_grams(unsigned long raw_reading, unsigned long tare_weight, float scale_factor) {
+    return (raw_reading - tare_weight) / scale_factor;
 }
 
 int main(void) {
@@ -341,7 +348,10 @@ int main(void) {
     sbi(EIMSK, INT6);  
 
     sei(); // Enable global interrupts
-		
+	
+	Hx711_init();
+	UART_SendStringNewLine("Init done.");
+	
 	uint8_t test_sequence[] = { 'H', 'e', 'l', 'l', 'o', ' ', 'U', 'A', 'R', 'T', '\r', '\n', 0 };
 
 	for (uint8_t i = 0; test_sequence[i] != 0; i++) {
@@ -354,13 +364,21 @@ int main(void) {
     DDRE |= (1 << DDE3);  // Set PORTE pin 3 as output
 	
 	printMenu();
+	
+	char temp_str[20];
+	unsigned long tmp_value = 0;
+	unsigned long tare_weight = 1000;
+	unsigned long standard_weight = 1000;
+	unsigned long standard_weight_reading = 1000;
+	float scale_factor = 1.0;
+	
 	while (1) {
 		char received = UART_GetChar();  // Wait for input
 		UART_SendStringNewLine("Your input is:");
 		UART_SendChar(received);
 		UART_SendChar('\r');
-		UART_SendChar('\n');
-
+		UART_SendChar('\n');		
+		
 		switch (received) {
             case '0':
 				cleanConsole();
@@ -467,16 +485,66 @@ int main(void) {
 				ADC_stop();
 				break;
 			case 'e':
-				Hx711_init();
-				UART_SendStringNewLine("Init done.");
-				unsigned long value = 0;
 				UART_SendStringNewLine("Reading weight ADC value:");
 				while (1) {
-					value = Hx711_read();
+					tmp_value = Hx711_read();
 					_delay_ms(500);
-					char temp_str[20];
-					sprintf(temp_str, "Value: %lu", value);  // Use %lu for unsigned long
-    
+					sprintf(temp_str, "Value: %lu", tmp_value);  // Use %lu for unsigned long
+					UART_SendStringNewLine(temp_str);
+				}
+				break;
+			case 'f':
+				UART_SendStringNewLine("Calibrate tare weight");
+				UART_SendStringNewLine("ESC ....... cancel");
+				UART_SendStringNewLine("ENTER ..... confirm");
+				while (1) {
+					char received = UART_GetChar();
+					if (received == '\x1B') {
+						UART_SendStringNewLine("Not implemented LMAO");
+					} else if (received == '\r') {
+						tare_weight = Hx711_read();
+						sprintf(temp_str, "Current tare value: %lu", tare_weight);
+						UART_SendStringNewLine(temp_str);
+						break;
+					} else {
+						UART_SendStringNewLine("Incorrect choice");
+					}
+				}
+				UART_SendStringNewLine("Calibrate with standard weight");
+				UART_SendStringNewLine("Enter standard weight weight in grams:");
+				UART_SendStringNewLine("ESC ....... cancel");
+				UART_SendStringNewLine("ENTER ..... confirm");
+				UART_SendStringNewLine("+ ......... add weight");
+				UART_SendStringNewLine("- ......... subtract weight");
+				while (1) {
+					sprintf(temp_str, "Current standard weight: %lu", standard_weight);
+					UART_SendStringNewLine(temp_str);
+					char received = UART_GetChar();
+					if (received == '+') {
+						standard_weight += 10;
+					} else if (received == '-') {
+						standard_weight -= 10;
+					} else if (received == '\x1B') {
+						UART_SendStringNewLine("Not implemented LMAO");
+						break;
+					}	else if (received == '\r') {
+						sprintf(temp_str, "Final standard weight: %lu", standard_weight);
+						UART_SendStringNewLine(temp_str);
+						standard_weight_reading = Hx711_read();
+						sprintf(temp_str, "Standard weight reading: %lu", standard_weight_reading);
+						UART_SendStringNewLine(temp_str);
+						break;
+					}
+				}
+				UART_SendStringNewLine("CALIBRATION PROCESS FINISHED!!!");
+				break;
+			case 'g':
+				UART_SendStringNewLine("Reading weight in g:");
+				while (1) {
+					tmp_value = Hx711_read();
+					_delay_ms(500);
+					float weight_grams = get_weight_in_grams(tmp_value, tare_weight, scale_factor);
+					sprintf(temp_str, "Value: %d g", (unsigned int)weight_grams);
 					UART_SendStringNewLine(temp_str);
 				}
 				break;
