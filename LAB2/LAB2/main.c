@@ -310,7 +310,17 @@ void send_counter(int counter)
 }
 
 float get_weight_in_grams(unsigned long raw_reading, unsigned long tare_weight, float scale_factor) {
-    return (raw_reading - tare_weight) / scale_factor;
+	long tared_reading = (long)raw_reading - (long)tare_weight;  // now can be negative
+    float scaled_reading = tared_reading / scale_factor;
+    return scaled_reading;
+}
+
+void print_weight(float weight_grams) {
+    char temp_str[64];
+    long whole = (long)weight_grams;
+    long decimal = labs((long)((weight_grams - whole) * 100));  // safe abs for long
+    sprintf(temp_str, "Value: %ld.%02ld g", whole, decimal);
+    UART_SendStringNewLine(temp_str);
 }
 
 int main(void) {
@@ -365,7 +375,7 @@ int main(void) {
 	
 	printMenu();
 	
-	char temp_str[20];
+	char temp_str[64];
 	unsigned long tmp_value = 0;
 	unsigned long tare_weight = 1000;
 	unsigned long standard_weight = 1000;
@@ -479,7 +489,7 @@ int main(void) {
 				UART_SendStringNewLine("Reading ADC value:");
                 ADC_Init(4, 2);
 				uint16_t adc_value = ADC_get(3);
-				char temp_str[20];
+				char temp_str[64];
 				sprintf(temp_str, "Value: %d", adc_value);
 				UART_SendStringNewLine(temp_str);
 				ADC_stop();
@@ -532,6 +542,7 @@ int main(void) {
 						UART_SendStringNewLine(temp_str);
 						standard_weight_reading = Hx711_read();
 						sprintf(temp_str, "Standard weight reading: %lu", standard_weight_reading);
+						scale_factor = (standard_weight_reading - tare_weight) / (float)standard_weight;
 						UART_SendStringNewLine(temp_str);
 						break;
 					}
@@ -544,8 +555,7 @@ int main(void) {
 					tmp_value = Hx711_read();
 					_delay_ms(500);
 					float weight_grams = get_weight_in_grams(tmp_value, tare_weight, scale_factor);
-					sprintf(temp_str, "Value: %d g", (unsigned int)weight_grams);
-					UART_SendStringNewLine(temp_str);
+					print_weight(weight_grams);
 				}
 				break;
             default:
